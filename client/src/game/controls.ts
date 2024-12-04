@@ -44,8 +44,8 @@ export class Controls {
   private updateButtonPositions() {
     this.LEFT_ARROW_POS = { x: 50, y: window.innerHeight - 60 };
     this.RIGHT_ARROW_POS = { x: 120, y: window.innerHeight - 60 };
-    this.THRUST_POS = { x: window.innerWidth - 150, y: window.innerHeight - 60 };
-    this.SHOOT_POS = { x: window.innerWidth - 70, y: window.innerHeight - 60 };
+    this.THRUST_POS = { x: window.innerWidth - 120, y: window.innerHeight - 60 };
+    this.SHOOT_POS = { x: window.innerWidth - 50, y: window.innerHeight - 60 };
   }
 
   private setupKeyboardControls() {

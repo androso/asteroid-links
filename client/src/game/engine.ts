@@ -150,15 +150,21 @@ export class GameEngine {
     this.ctx.fillStyle = 'white';
     this.ctx.font = '16px Arial';
     this.ctx.textAlign = 'left';
-    this.ctx.fillText(
-      'Desktop: Arrow keys/WASD to move, SPACE to shoot',
-      10,
-      30
-    );
-    this.ctx.fillText(
-      'Mobile: Drag to move, tap button to shoot',
-      10,
-      60
-    );
+    
+    if ('ontouchstart' in window) {
+      // Show mobile instructions
+      this.ctx.fillText(
+        'Mobile: Drag to move, tap button to shoot',
+        10,
+        30
+      );
+    } else {
+      // Show desktop instructions
+      this.ctx.fillText(
+        'Desktop: Arrow keys/WASD to move, SPACE to shoot',
+        10,
+        30
+      );
+    }
   }
 }
