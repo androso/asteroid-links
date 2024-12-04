@@ -3,26 +3,40 @@ import { Vector2D } from './vectors';
 export class Controls {
   keys: { [key: string]: boolean } = {};
   isShooting: boolean = false;
-  dpadState: {
-    up: boolean;
-    down: boolean;
-    left: boolean;
-    right: boolean;
-  } = {
-    up: false,
-    down: false,
-    left: false,
-    right: false
-  };
-  DPAD_SIZE = 50;
-  DPAD_CENTER_X = 100;
-  DPAD_CENTER_Y: number;
+  _isThrusting: boolean = false;
+  isLeft: boolean = false;
+  isRight: boolean = false;
+  
+  // Button positions and sizes
+  BUTTON_SIZE = 60;
+  BUTTON_MARGIN = 20;
+  LEFT_ARROW_POS = { x: 80, y: 0 };
+  RIGHT_ARROW_POS = { x: 160, y: 0 };
+  THRUST_POS = { x: 0, y: 0 };
+  SHOOT_POS = { x: 0, y: 0 };
+  
   player: any;
 
   constructor() {
     this.setupKeyboard();
     this.setupTouch();
-    this.DPAD_CENTER_Y = window.innerHeight - 100;
+    this.updateButtonPositions();
+    
+    // Update button positions when window resizes
+    window.addEventListener('resize', () => this.updateButtonPositions());
+  }
+
+  private updateButtonPositions() {
+    const h = window.innerHeight;
+    const w = window.innerWidth;
+    
+    // Left side controls (movement)
+    this.LEFT_ARROW_POS = { x: this.BUTTON_MARGIN + this.BUTTON_SIZE/2, y: h - this.BUTTON_MARGIN - this.BUTTON_SIZE/2 };
+    this.RIGHT_ARROW_POS = { x: this.BUTTON_MARGIN + this.BUTTON_SIZE*1.75, y: h - this.BUTTON_MARGIN - this.BUTTON_SIZE/2 };
+    
+    // Right side controls (actions)
+    this.THRUST_POS = { x: w - this.BUTTON_MARGIN - this.BUTTON_SIZE*1.75, y: h - this.BUTTON_MARGIN - this.BUTTON_SIZE/2 };
+    this.SHOOT_POS = { x: w - this.BUTTON_MARGIN - this.BUTTON_SIZE/2, y: h - this.BUTTON_MARGIN - this.BUTTON_SIZE/2 };
   }
 
   setPlayer(player: any) {
@@ -40,91 +54,69 @@ export class Controls {
   }
 
   private setupTouch() {
-    const checkDpadPress = (x: number, y: number) => {
-      const dx = x - this.DPAD_CENTER_X;
-      const dy = y - this.DPAD_CENTER_Y;
-      
-      // Reset all directions
-      this.dpadState.up = false;
-      this.dpadState.down = false;
-      this.dpadState.left = false;
-      this.dpadState.right = false;
+    const checkButtonPress = (x: number, y: number) => {
+      const checkDistance = (buttonX: number, buttonY: number) => {
+        const dx = x - buttonX;
+        const dy = y - buttonY;
+        return Math.sqrt(dx * dx + dy * dy) < this.BUTTON_SIZE/2;
+      };
 
-      // Check vertical direction
-      if (Math.abs(dy) > Math.abs(dx)) {
-        if (dy < -this.DPAD_SIZE/2) this.dpadState.up = true;
-        if (dy > this.DPAD_SIZE/2) this.dpadState.down = true;
+      // Check each button
+      if (checkDistance(this.LEFT_ARROW_POS.x, this.LEFT_ARROW_POS.y)) {
+        this.isLeft = true;
       }
-      // Check horizontal direction
-      else {
-        if (dx < -this.DPAD_SIZE/2) this.dpadState.left = true;
-        if (dx > this.DPAD_SIZE/2) this.dpadState.right = true;
+      if (checkDistance(this.RIGHT_ARROW_POS.x, this.RIGHT_ARROW_POS.y)) {
+        this.isRight = true;
+      }
+      if (checkDistance(this.THRUST_POS.x, this.THRUST_POS.y)) {
+        this._isThrusting = true;
+      }
+      if (checkDistance(this.SHOOT_POS.x, this.SHOOT_POS.y)) {
+        this.isShooting = true;
       }
     };
 
     window.addEventListener('touchstart', (e) => {
       Array.from(e.touches).forEach(touch => {
-        // Check if touch is in D-pad area
-        if (Math.abs(touch.clientX - this.DPAD_CENTER_X) < this.DPAD_SIZE * 1.5 &&
-            Math.abs(touch.clientY - this.DPAD_CENTER_Y) < this.DPAD_SIZE * 1.5) {
-          checkDpadPress(touch.clientX, touch.clientY);
-        }
-
-        // Check if touch is in the shoot button area
-        if (touch.clientX > window.innerWidth - 100 && 
-            touch.clientY > window.innerHeight - 100) {
-          this.isShooting = true;
-        }
+        checkButtonPress(touch.clientX, touch.clientY);
       });
     });
 
     window.addEventListener('touchmove', (e) => {
+      // Reset all states
+      this.isLeft = false;
+      this.isRight = false;
+      this._isThrusting = false;
+      this.isShooting = false;
+      
+      // Check all current touches
       Array.from(e.touches).forEach(touch => {
-        // Update D-pad state if touch is in D-pad area
-        if (Math.abs(touch.clientX - this.DPAD_CENTER_X) < this.DPAD_SIZE * 1.5 &&
-            Math.abs(touch.clientY - this.DPAD_CENTER_Y) < this.DPAD_SIZE * 1.5) {
-          checkDpadPress(touch.clientX, touch.clientY);
-        }
+        checkButtonPress(touch.clientX, touch.clientY);
       });
     });
 
     window.addEventListener('touchend', (e) => {
-      const remainingTouches = Array.from(e.touches);
+      // Reset all states
+      this.isLeft = false;
+      this.isRight = false;
+      this._isThrusting = false;
+      this.isShooting = false;
       
-      // Check if any remaining touches are in D-pad area
-      const hasDpadTouch = remainingTouches.some(touch => 
-        Math.abs(touch.clientX - this.DPAD_CENTER_X) < this.DPAD_SIZE * 1.5 &&
-        Math.abs(touch.clientY - this.DPAD_CENTER_Y) < this.DPAD_SIZE * 1.5
-      );
-
-      if (!hasDpadTouch) {
-        // Reset all D-pad states
-        this.dpadState.up = false;
-        this.dpadState.down = false;
-        this.dpadState.left = false;
-        this.dpadState.right = false;
-      }
-
-      // Only reset shooting if no touches are in the shoot button area
-      const hasShootTouch = remainingTouches.some(touch => 
-        touch.clientX > window.innerWidth - 100 && 
-        touch.clientY > window.innerHeight - 100
-      );
-
-      if (!hasShootTouch) {
-        this.isShooting = false;
-      }
+      // Check remaining touches
+      Array.from(e.touches).forEach(touch => {
+        checkButtonPress(touch.clientX, touch.clientY);
+      });
     });
   }
 
   getRotation(): number {
-    if (this.keys['ArrowLeft'] || this.keys['a'] || this.dpadState.left) return -5;
-    if (this.keys['ArrowRight'] || this.keys['d'] || this.dpadState.right) return 5;
+    if (this.keys['ArrowLeft'] || this.keys['a'] || this.isLeft) return -5;
+    if (this.keys['ArrowRight'] || this.keys['d'] || this.isRight) return 5;
     return 0;
   }
 
   isThrusting(): boolean {
-    return this.keys['ArrowUp'] || this.keys['w'] || this.dpadState.up;
+    return this.keys['ArrowUp'] || this.keys['w'] || this._isThrusting;
   }
 
   isTriggerPressed(): boolean {
@@ -132,36 +124,29 @@ export class Controls {
   }
 
   drawJoystick(ctx: CanvasRenderingContext2D) {
-    const x = this.DPAD_CENTER_X;
-    const y = this.DPAD_CENTER_Y;
-    const size = this.DPAD_SIZE;
+    const drawButton = (x: number, y: number, icon: string, isPressed: boolean) => {
+      ctx.beginPath();
+      ctx.arc(x, y, this.BUTTON_SIZE/2, 0, Math.PI * 2);
+      ctx.fillStyle = isPressed ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-    // Draw D-pad background
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 2;
+      // Draw icon
+      ctx.fillStyle = 'white';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(icon, x, y);
+    };
 
-    // Draw vertical part
-    ctx.fillStyle = this.dpadState.up ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
-    ctx.fillRect(x - size/3, y - size, size*2/3, size*2/3); // Up
-    ctx.fillStyle = this.dpadState.down ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
-    ctx.fillRect(x - size/3, y + size/3, size*2/3, size*2/3); // Down
+    // Draw movement arrows
+    drawButton(this.LEFT_ARROW_POS.x, this.LEFT_ARROW_POS.y, '←', this.isLeft);
+    drawButton(this.RIGHT_ARROW_POS.x, this.RIGHT_ARROW_POS.y, '→', this.isRight);
 
-    // Draw horizontal part
-    ctx.fillStyle = this.dpadState.left ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
-    ctx.fillRect(x - size, y - size/3, size*2/3, size*2/3); // Left
-    ctx.fillStyle = this.dpadState.right ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
-    ctx.fillRect(x + size/3, y - size/3, size*2/3, size*2/3); // Right
-
-    // Draw center
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.fillRect(x - size/3, y - size/3, size*2/3, size*2/3);
-
-    // Draw outlines
-    ctx.strokeRect(x - size/3, y - size, size*2/3, size*2/3); // Up
-    ctx.strokeRect(x - size/3, y + size/3, size*2/3, size*2/3); // Down
-    ctx.strokeRect(x - size, y - size/3, size*2/3, size*2/3); // Left
-    ctx.strokeRect(x + size/3, y - size/3, size*2/3, size*2/3); // Right
-    ctx.strokeRect(x - size/3, y - size/3, size*2/3, size*2/3); // Center
+    // Draw action buttons
+    drawButton(this.THRUST_POS.x, this.THRUST_POS.y, '▲', this._isThrusting);
+    drawButton(this.SHOOT_POS.x, this.SHOOT_POS.y, '●', this.isShooting);
   }
 }
