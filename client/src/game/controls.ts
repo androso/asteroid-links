@@ -2,22 +2,27 @@ import { Vector2D } from './vectors';
 
 export class Controls {
   keys: { [key: string]: boolean } = {};
-  touchStart: Vector2D | null = null;
-  touchPosition: Vector2D | null = null;
-  joystickCenter: Vector2D;
-  joystickPosition: Vector2D;
-  joystickActive: boolean = false;
   isShooting: boolean = false;
-  JOYSTICK_RADIUS = 40;
-
+  dpadState: {
+    up: boolean;
+    down: boolean;
+    left: boolean;
+    right: boolean;
+  } = {
+    up: false,
+    down: false,
+    left: false,
+    right: false
+  };
+  DPAD_SIZE = 50;
+  DPAD_CENTER_X = 100;
+  DPAD_CENTER_Y: number;
   player: any;
 
   constructor() {
     this.setupKeyboard();
     this.setupTouch();
-    // Set initial joystick position
-    this.joystickCenter = new Vector2D(100, window.innerHeight - 100);
-    this.joystickPosition = new Vector2D(100, window.innerHeight - 100);
+    this.DPAD_CENTER_Y = window.innerHeight - 100;
   }
 
   setPlayer(player: any) {
@@ -35,15 +40,34 @@ export class Controls {
   }
 
   private setupTouch() {
+    const checkDpadPress = (x: number, y: number) => {
+      const dx = x - this.DPAD_CENTER_X;
+      const dy = y - this.DPAD_CENTER_Y;
+      
+      // Reset all directions
+      this.dpadState.up = false;
+      this.dpadState.down = false;
+      this.dpadState.left = false;
+      this.dpadState.right = false;
+
+      // Check vertical direction
+      if (Math.abs(dy) > Math.abs(dx)) {
+        if (dy < -this.DPAD_SIZE/2) this.dpadState.up = true;
+        if (dy > this.DPAD_SIZE/2) this.dpadState.down = true;
+      }
+      // Check horizontal direction
+      else {
+        if (dx < -this.DPAD_SIZE/2) this.dpadState.left = true;
+        if (dx > this.DPAD_SIZE/2) this.dpadState.right = true;
+      }
+    };
+
     window.addEventListener('touchstart', (e) => {
       Array.from(e.touches).forEach(touch => {
-        const touchPos = new Vector2D(touch.clientX, touch.clientY);
-
-        // Check if touch is in joystick area
-        const distanceFromJoystick = touchPos.subtract(this.joystickCenter).length();
-        if (distanceFromJoystick < this.JOYSTICK_RADIUS) {
-          this.joystickActive = true;
-          this.joystickPosition = touchPos;
+        // Check if touch is in D-pad area
+        if (Math.abs(touch.clientX - this.DPAD_CENTER_X) < this.DPAD_SIZE * 1.5 &&
+            Math.abs(touch.clientY - this.DPAD_CENTER_Y) < this.DPAD_SIZE * 1.5) {
+          checkDpadPress(touch.clientX, touch.clientY);
         }
 
         // Check if touch is in the shoot button area
@@ -55,42 +79,30 @@ export class Controls {
     });
 
     window.addEventListener('touchmove', (e) => {
-      if (!this.joystickActive) return;
-      
-      // Find the touch point that's closest to the joystick center
-      const joystickTouch = Array.from(e.touches).find(touch => {
-        const touchPos = new Vector2D(touch.clientX, touch.clientY);
-        const distanceFromJoystick = touchPos.subtract(this.joystickCenter).length();
-        return distanceFromJoystick < this.JOYSTICK_RADIUS * 2;
-      });
-      
-      if (joystickTouch) {
-        const touchPos = new Vector2D(joystickTouch.clientX, joystickTouch.clientY);
-        // Limit joystick movement to radius
-        const offset = touchPos.subtract(this.joystickCenter);
-        if (offset.length() > this.JOYSTICK_RADIUS) {
-          this.joystickPosition = this.joystickCenter.add(
-            offset.normalize().multiply(this.JOYSTICK_RADIUS)
-          );
-        } else {
-          this.joystickPosition = touchPos;
+      Array.from(e.touches).forEach(touch => {
+        // Update D-pad state if touch is in D-pad area
+        if (Math.abs(touch.clientX - this.DPAD_CENTER_X) < this.DPAD_SIZE * 1.5 &&
+            Math.abs(touch.clientY - this.DPAD_CENTER_Y) < this.DPAD_SIZE * 1.5) {
+          checkDpadPress(touch.clientX, touch.clientY);
         }
-      }
+      });
     });
 
     window.addEventListener('touchend', (e) => {
       const remainingTouches = Array.from(e.touches);
       
-      // Only reset joystick if no touches are in the joystick area
-      const hasJoystickTouch = remainingTouches.some(touch => {
-        const touchPos = new Vector2D(touch.clientX, touch.clientY);
-        const distanceFromJoystick = touchPos.subtract(this.joystickCenter).length();
-        return distanceFromJoystick < this.JOYSTICK_RADIUS;
-      });
+      // Check if any remaining touches are in D-pad area
+      const hasDpadTouch = remainingTouches.some(touch => 
+        Math.abs(touch.clientX - this.DPAD_CENTER_X) < this.DPAD_SIZE * 1.5 &&
+        Math.abs(touch.clientY - this.DPAD_CENTER_Y) < this.DPAD_SIZE * 1.5
+      );
 
-      if (!hasJoystickTouch) {
-        this.joystickPosition = this.joystickCenter;
-        this.joystickActive = false;
+      if (!hasDpadTouch) {
+        // Reset all D-pad states
+        this.dpadState.up = false;
+        this.dpadState.down = false;
+        this.dpadState.left = false;
+        this.dpadState.right = false;
       }
 
       // Only reset shooting if no touches are in the shoot button area
@@ -106,27 +118,13 @@ export class Controls {
   }
 
   getRotation(): number {
-    if (this.keys['ArrowLeft'] || this.keys['a']) return -5;
-    if (this.keys['ArrowRight'] || this.keys['d']) return 5;
-    
-    if (this.joystickActive) {
-      const offset = this.joystickPosition.subtract(this.joystickCenter);
-      if (offset.length() > this.JOYSTICK_RADIUS * 0.3) {
-        const targetRotation = Math.atan2(offset.y, offset.x);
-        return (targetRotation - this.player.rotation) * 5;
-      }
-    }
+    if (this.keys['ArrowLeft'] || this.keys['a'] || this.dpadState.left) return -5;
+    if (this.keys['ArrowRight'] || this.keys['d'] || this.dpadState.right) return 5;
     return 0;
   }
 
   isThrusting(): boolean {
-    if (this.keys['ArrowUp'] || this.keys['w']) return true;
-    
-    if (this.joystickActive) {
-      const offset = this.joystickPosition.subtract(this.joystickCenter);
-      return offset.length() > this.JOYSTICK_RADIUS * 0.3;
-    }
-    return false;
+    return this.keys['ArrowUp'] || this.keys['w'] || this.dpadState.up;
   }
 
   isTriggerPressed(): boolean {
@@ -134,18 +132,36 @@ export class Controls {
   }
 
   drawJoystick(ctx: CanvasRenderingContext2D) {
-    // Draw joystick base
-    ctx.beginPath();
-    ctx.arc(this.joystickCenter.x, this.joystickCenter.y, this.JOYSTICK_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.stroke();
+    const x = this.DPAD_CENTER_X;
+    const y = this.DPAD_CENTER_Y;
+    const size = this.DPAD_SIZE;
 
-    // Draw joystick handle
-    ctx.beginPath();
-    ctx.arc(this.joystickPosition.x, this.joystickPosition.y, 20, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.fill();
+    // Draw D-pad background
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 2;
+
+    // Draw vertical part
+    ctx.fillStyle = this.dpadState.up ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(x - size/3, y - size, size*2/3, size*2/3); // Up
+    ctx.fillStyle = this.dpadState.down ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(x - size/3, y + size/3, size*2/3, size*2/3); // Down
+
+    // Draw horizontal part
+    ctx.fillStyle = this.dpadState.left ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(x - size, y - size/3, size*2/3, size*2/3); // Left
+    ctx.fillStyle = this.dpadState.right ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(x + size/3, y - size/3, size*2/3, size*2/3); // Right
+
+    // Draw center
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fillRect(x - size/3, y - size/3, size*2/3, size*2/3);
+
+    // Draw outlines
+    ctx.strokeRect(x - size/3, y - size, size*2/3, size*2/3); // Up
+    ctx.strokeRect(x - size/3, y + size/3, size*2/3, size*2/3); // Down
+    ctx.strokeRect(x - size, y - size/3, size*2/3, size*2/3); // Left
+    ctx.strokeRect(x + size/3, y - size/3, size*2/3, size*2/3); // Right
+    ctx.strokeRect(x - size/3, y - size/3, size*2/3, size*2/3); // Center
   }
 }
