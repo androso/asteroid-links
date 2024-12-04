@@ -36,21 +36,22 @@ export class Controls {
 
   private setupTouch() {
     window.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      const touchPos = new Vector2D(touch.clientX, touch.clientY);
+      Array.from(e.touches).forEach(touch => {
+        const touchPos = new Vector2D(touch.clientX, touch.clientY);
 
-      // Check if touch is in joystick area
-      const distanceFromJoystick = touchPos.subtract(this.joystickCenter).length();
-      if (distanceFromJoystick < this.JOYSTICK_RADIUS) {
-        this.joystickActive = true;
-        this.joystickPosition = touchPos;
-      }
+        // Check if touch is in joystick area
+        const distanceFromJoystick = touchPos.subtract(this.joystickCenter).length();
+        if (distanceFromJoystick < this.JOYSTICK_RADIUS) {
+          this.joystickActive = true;
+          this.joystickPosition = touchPos;
+        }
 
-      // Check if touch is in the shoot button area
-      if (touch.clientX > window.innerWidth - 100 && 
-          touch.clientY > window.innerHeight - 100) {
-        this.isShooting = true;
-      }
+        // Check if touch is in the shoot button area
+        if (touch.clientX > window.innerWidth - 100 && 
+            touch.clientY > window.innerHeight - 100) {
+          this.isShooting = true;
+        }
+      });
     });
 
     window.addEventListener('touchmove', (e) => {
@@ -71,10 +72,29 @@ export class Controls {
     });
 
     window.addEventListener('touchend', (e) => {
-      // Reset joystick position when touch ends
-      this.joystickPosition = this.joystickCenter;
-      this.joystickActive = false;
-      this.isShooting = false;
+      const remainingTouches = Array.from(e.touches);
+      
+      // Only reset joystick if no touches are in the joystick area
+      const hasJoystickTouch = remainingTouches.some(touch => {
+        const touchPos = new Vector2D(touch.clientX, touch.clientY);
+        const distanceFromJoystick = touchPos.subtract(this.joystickCenter).length();
+        return distanceFromJoystick < this.JOYSTICK_RADIUS;
+      });
+
+      if (!hasJoystickTouch) {
+        this.joystickPosition = this.joystickCenter;
+        this.joystickActive = false;
+      }
+
+      // Only reset shooting if no touches are in the shoot button area
+      const hasShootTouch = remainingTouches.some(touch => 
+        touch.clientX > window.innerWidth - 100 && 
+        touch.clientY > window.innerHeight - 100
+      );
+
+      if (!hasShootTouch) {
+        this.isShooting = false;
+      }
     });
   }
 
