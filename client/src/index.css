@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-black text-white m-0 p-0 overflow-hidden;
+    touch-action: none;
+  }
+
+  canvas {
+    display: block;
+    touch-action: none;
+  }
+}
