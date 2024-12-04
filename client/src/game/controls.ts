@@ -146,7 +146,7 @@ export class Controls {
     drawButton(this.RIGHT_ARROW_POS.x, this.RIGHT_ARROW_POS.y, '→', this.isRight);
 
     // Draw action buttons
-    drawButton(this.THRUST_POS.x, this.THRUST_POS.y, '▲', this._isThrusting);
-    drawButton(this.SHOOT_POS.x, this.SHOOT_POS.y, '●', this.isShooting);
+    drawButton(this.THRUST_POS.x, this.THRUST_POS.y, 'THRUST', this._isThrusting);
+    drawButton(this.SHOOT_POS.x, this.SHOOT_POS.y, 'SHOOT', this.isShooting);
   }
 }
