@@ -154,14 +154,14 @@ export class GameEngine {
     if ('ontouchstart' in window) {
       // Show mobile instructions
       this.ctx.fillText(
-        'Mobile: Drag to move, tap button to shoot',
+        'Use LEFT and RIGHT buttons to rotate, THRUST to move forward, SHOOT to fire',
         10,
         30
       );
     } else {
       // Show desktop instructions
       this.ctx.fillText(
-        'Desktop: Arrow keys/WASD to move, SPACE to shoot',
+        'WASD or Arrow keys to move, Spacebar to shoot',
         10,
         30
       );
