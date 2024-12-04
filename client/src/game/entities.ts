@@ -86,7 +86,7 @@ export class Bullet implements Entity {
       Math.cos(rotation) * 500,
       Math.sin(rotation) * 500
     );
-    this.radius = 2;
+    this.radius = 4;
     this.lifetime = 1.5;
   }
 
