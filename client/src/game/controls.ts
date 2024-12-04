@@ -135,7 +135,8 @@ export class Controls {
 
       // Draw icon
       ctx.fillStyle = 'white';
-      ctx.font = '24px Arial';
+      // Use smaller font for action buttons
+      ctx.font = icon.length > 2 ? '16px Arial' : '24px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(icon, x, y);
