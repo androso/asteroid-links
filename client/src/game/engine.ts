@@ -13,6 +13,7 @@ export class GameEngine {
   private targets: SocialTarget[];
   private particles: ParticleSystem;
   private lastTime: number;
+  private currentTime: number;
   private running: boolean;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -24,6 +25,7 @@ export class GameEngine {
     this.targets = [];
     this.particles = new ParticleSystem();
     this.lastTime = 0;
+    this.currentTime = 0;
     this.running = false;
 
     this.setupCanvas();
@@ -52,11 +54,12 @@ export class GameEngine {
     this.running = false;
   }
 
-  private gameLoop(currentTime: number) {
+  private gameLoop(time: number) {
     if (!this.running) return;
 
-    const dt = (currentTime - this.lastTime) / 1000;
-    this.lastTime = currentTime;
+    const dt = (time - this.lastTime) / 1000;
+    this.lastTime = time;
+    this.currentTime = time;
 
     this.update(dt);
     this.draw();
@@ -73,13 +76,13 @@ export class GameEngine {
 
     // Handle shooting
     if (this.controls.isTriggerPressed() && 
-        currentTime - this.player.lastShot > 250) {
+      this.currentTime - this.player.lastShot > 250) {
       const bulletPos = new Vector2D(
         this.player.position.x + Math.cos(this.player.rotation) * 20,
         this.player.position.y + Math.sin(this.player.rotation) * 20
       );
       this.bullets.push(new Bullet(bulletPos, this.player.rotation));
-      this.player.lastShot = currentTime;
+      this.player.lastShot = this.currentTime;
     }
 
     // Update bullets
