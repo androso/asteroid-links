@@ -154,9 +154,14 @@ export class GameEngine {
     if ('ontouchstart' in window) {
       // Show mobile instructions
       this.ctx.fillText(
-        'Use LEFT and RIGHT buttons to rotate, THRUST to move forward, SHOOT to fire',
+        'Use LEFT and RIGHT buttons to rotate,',
         10,
         30
+      );
+      this.ctx.fillText(
+        'THRUST to move forward, SHOOT to fire',
+        10,
+        50
       );
     } else {
       // Show desktop instructions
