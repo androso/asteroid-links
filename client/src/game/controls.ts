@@ -10,12 +10,18 @@ export class Controls {
   isShooting: boolean = false;
   JOYSTICK_RADIUS = 40;
 
+  player: any;
+
   constructor() {
     this.setupKeyboard();
     this.setupTouch();
     // Set initial joystick position
     this.joystickCenter = new Vector2D(100, window.innerHeight - 100);
     this.joystickPosition = new Vector2D(100, window.innerHeight - 100);
+  }
+
+  setPlayer(player: any) {
+    this.player = player;
   }
 
   private setupKeyboard() {
@@ -78,7 +84,10 @@ export class Controls {
     
     if (this.joystickActive) {
       const offset = this.joystickPosition.subtract(this.joystickCenter);
-      return Math.atan2(offset.y, offset.x);
+      if (offset.length() > this.JOYSTICK_RADIUS * 0.3) {
+        const targetRotation = Math.atan2(offset.y, offset.x);
+        return (targetRotation - this.player.rotation) * 5;
+      }
     }
     return 0;
   }

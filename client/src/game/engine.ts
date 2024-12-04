@@ -21,6 +21,7 @@ export class GameEngine {
     this.ctx = canvas.getContext('2d')!;
     this.controls = new Controls();
     this.player = new Player();
+    this.controls.setPlayer(this.player);
     this.bullets = [];
     this.targets = [];
     this.particles = new ParticleSystem();
