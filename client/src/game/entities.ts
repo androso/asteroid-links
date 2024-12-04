@@ -1,4 +1,37 @@
 import { Vector2D } from './vectors';
+// Social icon URLs
+const GITHUB_ICON_URL = 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/900px-Octicons-mark-github.svg.png?20180806170715';
+const BLOG_ICON_URL = 'https://www.anibalandrade.com/new_avatar.jpg';
+const REPLIT_ICON_URL = 'https://custom.typingmind.com/assets/models/replit.png';
+
+// Cache for loaded images
+const imageCache: { [key: string]: HTMLImageElement } = {};
+
+// Load and cache images
+function loadImage(url: string): Promise<HTMLImageElement> {
+  if (imageCache[url]) {
+    return Promise.resolve(imageCache[url]);
+  }
+  
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      imageCache[url] = img;
+      resolve(img);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// Preload all images
+Promise.all([
+  loadImage(GITHUB_ICON_URL),
+  loadImage(BLOG_ICON_URL),
+  loadImage(REPLIT_ICON_URL)
+]).catch(console.error);
+
 
 export interface Entity {
   position: Vector2D;
@@ -148,24 +181,35 @@ export class SocialTarget implements Entity {
     ctx.stroke();
 
     // Draw icon based on type
-    ctx.fillStyle = 'white';
-    ctx.font = '20px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const icon = this.getIcon();
-    ctx.fillText(icon, 0, 0);
+    const imageSize = this.radius * 1.5;
+    
+    switch (this.type) {
+      case 'github':
+        if (imageCache[GITHUB_ICON_URL]) {
+          ctx.drawImage(imageCache[GITHUB_ICON_URL], -imageSize/2, -imageSize/2, imageSize, imageSize);
+        }
+        break;
+      case 'blog':
+        if (imageCache[BLOG_ICON_URL]) {
+          ctx.drawImage(imageCache[BLOG_ICON_URL], -imageSize/2, -imageSize/2, imageSize, imageSize);
+        }
+        break;
+      case 'replit':
+        if (imageCache[REPLIT_ICON_URL]) {
+          ctx.drawImage(imageCache[REPLIT_ICON_URL], -imageSize/2, -imageSize/2, imageSize, imageSize);
+        }
+        break;
+      default:
+        // For other types, use emojis
+        ctx.fillStyle = 'white';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const icon = this.type === 'twitter' ? '𝕏' : 
+                    this.type === 'linkedin' ? 'in' : '?';
+        ctx.fillText(icon, 0, 0);
+    }
 
     ctx.restore();
-  }
-
-  private getIcon(): string {
-    switch (this.type) {
-      case 'twitter': return '𝕏';
-      case 'blog': return '📝';
-      case 'github': return '🐙';
-      case 'linkedin': return 'in';
-      case 'replit': return '⌨️';
-      default: return '?';
-    }
   }
 }
