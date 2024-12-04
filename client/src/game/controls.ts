@@ -57,17 +57,24 @@ export class Controls {
     window.addEventListener('touchmove', (e) => {
       if (!this.joystickActive) return;
       
-      const touch = e.touches[0];
-      const touchPos = new Vector2D(touch.clientX, touch.clientY);
+      // Find the touch point that's closest to the joystick center
+      const joystickTouch = Array.from(e.touches).find(touch => {
+        const touchPos = new Vector2D(touch.clientX, touch.clientY);
+        const distanceFromJoystick = touchPos.subtract(this.joystickCenter).length();
+        return distanceFromJoystick < this.JOYSTICK_RADIUS * 2;
+      });
       
-      // Limit joystick movement to radius
-      const offset = touchPos.subtract(this.joystickCenter);
-      if (offset.length() > this.JOYSTICK_RADIUS) {
-        this.joystickPosition = this.joystickCenter.add(
-          offset.normalize().multiply(this.JOYSTICK_RADIUS)
-        );
-      } else {
-        this.joystickPosition = touchPos;
+      if (joystickTouch) {
+        const touchPos = new Vector2D(joystickTouch.clientX, joystickTouch.clientY);
+        // Limit joystick movement to radius
+        const offset = touchPos.subtract(this.joystickCenter);
+        if (offset.length() > this.JOYSTICK_RADIUS) {
+          this.joystickPosition = this.joystickCenter.add(
+            offset.normalize().multiply(this.JOYSTICK_RADIUS)
+          );
+        } else {
+          this.joystickPosition = touchPos;
+        }
       }
     });
 
