@@ -144,27 +144,6 @@ export class GameEngine {
   private drawMobileControls() {
     // Draw joystick
     this.controls.drawJoystick(this.ctx);
-
-    // Draw shoot button
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    this.ctx.beginPath();
-    this.ctx.arc(
-      this.canvas.width - 50,
-      this.canvas.height - 50,
-      40,
-      0,
-      Math.PI * 2
-    );
-    this.ctx.fill();
-    
-    this.ctx.fillStyle = 'white';
-    this.ctx.font = '20px Arial';
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText(
-      '🎯',
-      this.canvas.width - 50,
-      this.canvas.height - 50
-    );
   }
 
   private drawInstructions() {
