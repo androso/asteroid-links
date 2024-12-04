@@ -1,49 +1,54 @@
 import { Vector2D } from './vectors';
 
 export class Controls {
-  keys: { [key: string]: boolean } = {};
-  isShooting: boolean = false;
-  _isThrusting: boolean = false;
-  isLeft: boolean = false;
-  isRight: boolean = false;
-  
-  // Button positions and sizes
-  BUTTON_SIZE = 60;
-  BUTTON_MARGIN = 20;
-  LEFT_ARROW_POS = { x: 80, y: 0 };
-  RIGHT_ARROW_POS = { x: 160, y: 0 };
-  THRUST_POS = { x: 0, y: 0 };
-  SHOOT_POS = { x: 0, y: 0 };
-  
-  player: any;
+  private BUTTON_SIZE = 60;
+  private LEFT_ARROW_POS = { x: 70, y: window.innerHeight - 70 };
+  private RIGHT_ARROW_POS = { x: 190, y: window.innerHeight - 70 };
+  private THRUST_POS = { x: window.innerWidth - 190, y: window.innerHeight - 70 };
+  private SHOOT_POS = { x: window.innerWidth - 70, y: window.innerHeight - 70 };
+
+  private keys: { [key: string]: boolean } = {};
+  private isLeft = false;
+  private isRight = false;
+  private _isThrusting = false;
+  private isShooting = false;
 
   constructor() {
-    this.setupKeyboard();
-    this.setupTouch();
     this.updateButtonPositions();
+    this.setupKeyboardControls();
+    this.setupTouchControls();
     
     // Update button positions when window resizes
     window.addEventListener('resize', () => this.updateButtonPositions());
+    
+    // Reset controls when window loses focus or visibility
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.resetControlStates();
+      }
+    });
+    
+    window.addEventListener('blur', () => {
+      this.resetControlStates();
+    });
+  }
+
+  private resetControlStates() {
+    this.isLeft = false;
+    this.isRight = false;
+    this._isThrusting = false;
+    this.isShooting = false;
+    this.keys = {};
   }
 
   private updateButtonPositions() {
-    const h = window.innerHeight;
-    const w = window.innerWidth;
-    
-    // Left side controls (movement)
-    this.LEFT_ARROW_POS = { x: this.BUTTON_MARGIN + this.BUTTON_SIZE/2, y: h - this.BUTTON_MARGIN - this.BUTTON_SIZE/2 };
-    this.RIGHT_ARROW_POS = { x: this.BUTTON_MARGIN + this.BUTTON_SIZE*1.75, y: h - this.BUTTON_MARGIN - this.BUTTON_SIZE/2 };
-    
-    // Right side controls (actions)
-    this.THRUST_POS = { x: w - this.BUTTON_MARGIN - this.BUTTON_SIZE*1.75, y: h - this.BUTTON_MARGIN - this.BUTTON_SIZE/2 };
-    this.SHOOT_POS = { x: w - this.BUTTON_MARGIN - this.BUTTON_SIZE/2, y: h - this.BUTTON_MARGIN - this.BUTTON_SIZE/2 };
+    this.LEFT_ARROW_POS = { x: 70, y: window.innerHeight - 70 };
+    this.RIGHT_ARROW_POS = { x: 190, y: window.innerHeight - 70 };
+    this.THRUST_POS = { x: window.innerWidth - 190, y: window.innerHeight - 70 };
+    this.SHOOT_POS = { x: window.innerWidth - 70, y: window.innerHeight - 70 };
   }
 
-  setPlayer(player: any) {
-    this.player = player;
-  }
-
-  private setupKeyboard() {
+  private setupKeyboardControls() {
     window.addEventListener('keydown', (e) => {
       this.keys[e.key] = true;
     });
@@ -53,25 +58,24 @@ export class Controls {
     });
   }
 
-  private setupTouch() {
+  private setupTouchControls() {
     const checkButtonPress = (x: number, y: number) => {
-      const checkDistance = (buttonX: number, buttonY: number) => {
-        const dx = x - buttonX;
-        const dy = y - buttonY;
-        return Math.sqrt(dx * dx + dy * dy) < this.BUTTON_SIZE/2;
+      const dist = (bx: number, by: number) => {
+        const dx = x - bx;
+        const dy = y - by;
+        return Math.sqrt(dx * dx + dy * dy);
       };
 
-      // Check each button
-      if (checkDistance(this.LEFT_ARROW_POS.x, this.LEFT_ARROW_POS.y)) {
+      if (dist(this.LEFT_ARROW_POS.x, this.LEFT_ARROW_POS.y) < this.BUTTON_SIZE/2) {
         this.isLeft = true;
       }
-      if (checkDistance(this.RIGHT_ARROW_POS.x, this.RIGHT_ARROW_POS.y)) {
+      if (dist(this.RIGHT_ARROW_POS.x, this.RIGHT_ARROW_POS.y) < this.BUTTON_SIZE/2) {
         this.isRight = true;
       }
-      if (checkDistance(this.THRUST_POS.x, this.THRUST_POS.y)) {
+      if (dist(this.THRUST_POS.x, this.THRUST_POS.y) < this.BUTTON_SIZE/2) {
         this._isThrusting = true;
       }
-      if (checkDistance(this.SHOOT_POS.x, this.SHOOT_POS.y)) {
+      if (dist(this.SHOOT_POS.x, this.SHOOT_POS.y) < this.BUTTON_SIZE/2) {
         this.isShooting = true;
       }
     };
@@ -83,26 +87,22 @@ export class Controls {
     });
 
     window.addEventListener('touchmove', (e) => {
-      // Reset all states
       this.isLeft = false;
       this.isRight = false;
       this._isThrusting = false;
       this.isShooting = false;
       
-      // Check all current touches
       Array.from(e.touches).forEach(touch => {
         checkButtonPress(touch.clientX, touch.clientY);
       });
     });
 
     window.addEventListener('touchend', (e) => {
-      // Reset all states
       this.isLeft = false;
       this.isRight = false;
       this._isThrusting = false;
       this.isShooting = false;
       
-      // Check remaining touches
       Array.from(e.touches).forEach(touch => {
         checkButtonPress(touch.clientX, touch.clientY);
       });
